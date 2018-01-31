@@ -18,7 +18,7 @@
     mutate(main, {class: {hidden: total < 1}})
   }
   const saveTodos = () => {
-    localStorage.setItem('todos', todo.toJSON())
+    localStorage.setItem('todos', JSON.stringify([...todo.store.entries()]))
     countTodos()
   }
   todo.on.set(saveTodos)
@@ -26,8 +26,8 @@
 
   todo.once.init(() => run(() => {
     each(
-      JSON.parse(localStorage.getItem('todos') || '{}'),
-      (state, name) => todoItem(name, state)
+      JSON.parse(localStorage.getItem('todos') || '[]'),
+      ([name, state]) => todoItem(name, state)
     )
     countTodos()
     todo.emit.initRoutes()
