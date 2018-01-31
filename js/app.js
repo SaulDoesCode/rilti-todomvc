@@ -1,7 +1,6 @@
 { /* global rilti localStorage location */
-  const {dom, domfn, model, run, route, each} = rilti
+  const {dom, domfn: {mutate}, model, run, route, each} = rilti
   const {a, p, ul, li, h1, div, span, strong, input, label, button, section, footer, header} = dom
-  const {mutate} = domfn
 
   const ENTER = 13
   const link = (href, contents, options = {}) => a(Object.assign(options, {href}), contents)
@@ -16,7 +15,7 @@
     })
     const uncompleted = total - completed
     todo.emit.count({total, completed, uncompleted})
-    mutate([main], {class: {hidden: total < 1}})
+    mutate(main, {class: {hidden: total < 1}})
   }
   const saveTodos = () => {
     localStorage.setItem('todos', todo.toJSON())
@@ -24,11 +23,6 @@
   }
   todo.on.set(saveTodos)
   todo.on.delete(saveTodos)
-
-  todo.on.update((oldName, name, state) => {
-    todo.del(oldName)
-    todo[name] = state
-  })
 
   todo.once.init(() => run(() => {
     each(
@@ -85,15 +79,9 @@
       class: 'toggle-all',
       id: 'toggle-all',
       attr: {type: 'checkbox'},
-      on_change (e, {checked}) {
-        todo.emit.toggleAll(checked)
-      }
+      on_change (e, {checked}) { todo.emit.toggleAll(checked) }
     }),
-    label({
-      attr: {for: 'toggle-all'}
-    },
-      'Mark all as complete'
-    ),
+    label({attr: {for: 'toggle-all'}}, 'Mark all as complete'),
     todoList
   )
 
@@ -114,9 +102,7 @@
     ].map(([href, name]) => {
       const filter = link(href, name)
       todo.on.filter(type => {
-        mutate(filter, {
-          class: {selected: type === name}
-        })
+        mutate(filter, {class: {selected: type === name}})
       })
       todo.on.initRoutes(() => {
         route(href, () => todo.emit.filter(activeFilter = name))
@@ -158,9 +144,14 @@
       mutate(item, {class: {editing}})
       valueLabel.textContent = value = edit.value.trim()
       if (!editing && value !== oldValue) {
-        todo.emit.update(oldValue, value, completed)
-        oldValue = value
+        todo.del(oldValue)
+        todo[oldValue = value] = completed
       }
+    }
+
+    const remove = () => {
+      item.remove()
+      todo.del(value)
     }
 
     const applyFilter = (type = activeFilter) => {
@@ -169,8 +160,6 @@
       else if (type === 'Completed') hidden = !completed
       mutate(item, {class: {hidden}})
     }
-    todo.on.filter(applyFilter)
-    applyFilter()
 
     const setState = state => {
       completed = todo[value] = state
@@ -179,11 +168,8 @@
       applyFilter()
     }
 
-    const remove = () => {
-      item.remove()
-      todo.del(value)
-    }
-
+    applyFilter()
+    todo.on.filter(applyFilter)
     todo.on.toggleAll(setState)
     todo.on.clearCompleted(() => completed && remove())
 
