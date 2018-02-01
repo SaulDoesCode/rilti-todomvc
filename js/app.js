@@ -1,6 +1,6 @@
 { /* global rilti localStorage location */
-  const {dom, domfn: {mutate}, model, run, route, each} = rilti
-  const {a, p, ul, li, h1, div, span, strong, input, label, button, section, footer, header} = dom
+  const {dom, domfn: {Class}, model, run, route, each} = rilti
+  const {a, p, ul, li, h1, div, span, input, label, button, section, footer, header} = dom
 
   const ENTER = 13
   const link = (href, contents, options = {}) => a(Object.assign(options, {href}), contents)
@@ -9,13 +9,10 @@
 
   const countTodos = () => {
     const total = todo.store.size
-    let completed = 0
-    todo.each(state => {
-      if (state) completed++
-    })
-    const uncompleted = total - completed
-    todo.emit.count({total, completed, uncompleted})
-    mutate(main, {class: {hidden: total < 1}})
+    let done = 0
+    todo.each(state => state && done++)
+    todo.emit.count(total - done)
+    Class(main, 'hidden', total < 1)
   }
   const saveTodos = () => {
     localStorage.setItem('todos', JSON.stringify([...todo.store.entries()]))
@@ -33,10 +30,7 @@
     todo.emit.initRoutes()
   }))
 
-  const todoapp = section({
-    class: 'todoapp',
-    render: 'body'
-  })
+  const todoapp = section({class: 'todoapp', render: 'body'})
 
   footer({
     class: 'info',
@@ -86,9 +80,8 @@
   )
 
   const todocount = span({class: 'todo-count'})
-  todo.on.count(({uncompleted = 0}) => {
-    todocount.innerHTML = ''
-    todocount.append(strong(uncompleted), ` item${uncompleted !== 1 ? 's' : ''} left`)
+  todo.on.count((count = 0) => {
+    todocount.innerHTML = `<strong>${count}</strong> item${count !== 1 ? 's' : ''} left`
   })
 
   let activeFilter = 'All'
@@ -101,9 +94,7 @@
       ['#/completed', 'Completed']
     ].map(([href, name]) => {
       const filter = link(href, name)
-      todo.on.filter(type => {
-        mutate(filter, {class: {selected: type === name}})
-      })
+      todo.on.filter(type => Class(filter, 'selected', type === name))
       todo.on.initRoutes(() => {
         route(href, () => todo.emit.filter(activeFilter = name))
       })
@@ -131,17 +122,15 @@
     const edit = input({
       class: 'edit',
       attr: {value},
-      on: {
-        blur () { editingMode(false) },
-        keydown ({keyCode}) { keyCode === ENTER && editingMode(false) }
-      }
+      on_blur: e => editingMode(false),
+      on_keydown: ({keyCode}) => keyCode === ENTER && editingMode(false)
     })
 
     const item = li({render: todoList, class: {completed}}, view, edit)
 
     let oldValue = value
     const editingMode = editing => {
-      mutate(item, {class: {editing}})
+      Class(item, {editing})
       valueLabel.textContent = value = edit.value.trim()
       if (!editing && value !== oldValue) {
         todo.del(oldValue)
@@ -158,37 +147,31 @@
       let hidden = false
       if (type === 'Active') hidden = completed
       else if (type === 'Completed') hidden = !completed
-      mutate(item, {class: {hidden}})
+      Class(item, {hidden})
+      if (toggle.checked !== completed) toggle.checked = completed
     }
 
-    const setState = state => {
-      completed = todo[value] = state
-      mutate(item, {class: {completed}})
-      if (toggle.checked !== state) toggle.checked = state
+    const setState = (state = !completed) => {
+      Class(item, 'completed', completed = todo[value] = state)
       applyFilter()
     }
+
+    const toggle = input({
+      class: 'toggle',
+      render: view,
+      attr: {type: 'checkbox'},
+      on_change: e => setState()
+    })
+
+    const valueLabel = label(
+      {render: view, on_dblclick: e => editingMode(true)},
+      value
+    )
 
     applyFilter()
     todo.on.filter(applyFilter)
     todo.on.toggleAll(setState)
     todo.on.clearCompleted(() => completed && remove())
-
-    const toggle = input({
-      class: 'toggle',
-      render: view,
-      attr: {
-        type: 'checkbox',
-        checked: completed ? true : null
-      },
-      on_change (e, {checked}) { setState(checked) }
-    })
-
-    const valueLabel = label({
-      render: view,
-      on_dblclick () { editingMode(true) }
-    },
-      value
-    )
 
     button({class: 'destroy', render: view, once_click: remove})
 
