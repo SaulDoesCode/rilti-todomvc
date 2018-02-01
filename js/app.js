@@ -1,9 +1,9 @@
-{ /* global rilti localStorage location */
+{ /* global rilti localStorage */
   const {dom, domfn: {Class}, model, run, route, each} = rilti
   const {a, p, ul, li, h1, div, span, input, label, button, section, footer, header} = dom
 
   const ENTER = 13
-  const link = (href, contents, options = {}) => a(Object.assign(options, {href}), contents)
+  const link = (href, contents) => a({href}, contents)
 
   const todo = model()
 
@@ -30,17 +30,12 @@
     todo.emit.initRoutes()
   }))
 
-  const todoapp = section({class: 'todoapp', render: 'body'})
+  todo.on.count((count = 0) => {
+    todocount.innerHTML = `<strong>${count}</strong> item${count !== 1 ? 's' : ''} left`
+  })
 
-  footer({
-    class: 'info',
-    renderAfter: todoapp
-  },
-    p('Double-click to edit a todo'),
-    p('Template by ', link('http://sindresorhus.com', 'Sindre Sorhus')),
-    p('Created by ', link('https://github.com/SaulDoesCode', 'SaulDoesCode')),
-    p('Part of ', link('http://todomvc.com', 'TodoMVC'))
-  )
+  const todoapp = section({class: 'todoapp', render: 'body'})
+  const todocount = span({class: 'todo-count'})
 
   header({
     class: 'header',
@@ -62,6 +57,15 @@
       }
     })
   )
+  footer({
+    class: 'info',
+    renderAfter: todoapp
+  },
+    p('Double-click to edit a todo'),
+    p('Template by ', link('http://sindresorhus.com', 'Sindre Sorhus')),
+    p('Created by ', link('https://github.com/SaulDoesCode', 'SaulDoesCode')),
+    p('Part of ', link('http://todomvc.com', 'TodoMVC'))
+  )
 
   const todoList = ul({class: 'todo-list'})
 
@@ -79,14 +83,9 @@
     todoList
   )
 
-  const todocount = span({class: 'todo-count'})
-  todo.on.count((count = 0) => {
-    todocount.innerHTML = `<strong>${count}</strong> item${count !== 1 ? 's' : ''} left`
-  })
-
-  let activeFilter = 'All'
   const filters = ul({
-    class: 'filters'
+    class: 'filters',
+    props: {active: 'All'}
   },
     [
       ['#/', 'All'],
@@ -96,12 +95,11 @@
       const filter = link(href, name)
       todo.on.filter(type => Class(filter, 'selected', type === name))
       todo.on.initRoutes(() => {
-        route(href, () => todo.emit.filter(activeFilter = name))
+        route(href, () => todo.emit.filter(filters.active = name))
       })
       return li(filter)
     })
   )
-  if (!location.hash) location.hash = '#/'
 
   footer({
     class: 'footer',
@@ -143,12 +141,9 @@
       todo.del(value)
     }
 
-    const applyFilter = (type = activeFilter) => {
-      let hidden = false
-      if (type === 'Active') hidden = completed
-      else if (type === 'Completed') hidden = !completed
-      Class(item, {hidden})
+    const applyFilter = (type = filters.active) => {
       if (toggle.checked !== completed) toggle.checked = completed
+      Class(item, 'hidden', (type === 'Active' && completed) || (type === 'Completed' && !completed))
     }
 
     const setState = (state = !completed) => {
