@@ -161,12 +161,12 @@
       value
     )
 
+    button({class: 'destroy', render: view, once_click: remove})
+
     applyFilter()
     todo.on.filter(applyFilter)
     todo.on.toggleAll(setState)
     todo.on.clearCompleted(() => completed && remove())
-
-    button({class: 'destroy', render: view, once_click: remove})
 
     if (!todo.has(value)) todo[value] = completed
     return item
