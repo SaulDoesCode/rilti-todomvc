@@ -1,5 +1,5 @@
 { /* global rilti localStorage */
-  const {dom, domfn: {Class}, model, run, route, each} = rilti
+  const {dom, domfn: {Class}, model, run, route} = rilti
   const {a, p, ul, li, h1, div, span, input, label, button, section, footer, header} = dom
 
   const ENTER = 13
