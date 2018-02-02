@@ -5,7 +5,7 @@
   const ENTER = 13
   const link = (href, contents) => a({href}, contents)
 
-  const todo = model()
+  const todo = model(localStorage.getItem('todos'))
 
   const countTodos = () => {
     const total = todo.store.size
@@ -15,20 +15,18 @@
     Class(main, 'hidden', total < 1)
   }
   const saveTodos = () => {
-    localStorage.setItem('todos', JSON.stringify([...todo.store.entries()]))
+    localStorage.setItem('todos', todo.toJSONArray())
     countTodos()
   }
   todo.on.set(saveTodos)
   todo.on.delete(saveTodos)
 
-  todo.once.init(() => run(() => {
-    each(
-      JSON.parse(localStorage.getItem('todos') || '[]'),
-      ([name, state]) => todoItem(name, state)
-    )
+  todo.once.init(() => {
+    todo.each((state, name) => todoItem(name, state))
     countTodos()
     todo.emit.initRoutes()
-  }))
+  })
+  run(todo.emit.init) // defer inition
 
   todo.on.count((count = 0) => {
     todocount.innerHTML = `<strong>${count}</strong> item${count !== 1 ? 's' : ''} left`
@@ -173,6 +171,4 @@
     if (!todo.has(value)) todo[value] = completed
     return item
   }
-
-  todo.emit.init()
 }
