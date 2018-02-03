@@ -7,13 +7,6 @@
 
   const todo = model(localStorage.getItem('todos'))
 
-  const countTodos = () => {
-    const total = todo.store.size
-    let done = 0
-    todo.each(state => state && done++)
-    todo.emit.count(total - done)
-    Class(main, 'hidden', total < 1)
-  }
   const saveTodos = () => {
     localStorage.setItem('todos', todo.toJSONArray())
     countTodos()
@@ -27,6 +20,14 @@
     todo.emit.initRoutes()
   })
   run(todo.emit.init) // defer inition
+
+  const countTodos = () => {
+    const total = todo.size
+    let done = 0
+    todo.each(state => state && done++)
+    todo.emit.count(total - done)
+    Class(main, 'hidden', total < 1)
+  }
 
   todo.on.count((count = 0) => {
     todocount.innerHTML = `<strong>${count}</strong> item${count !== 1 ? 's' : ''} left`
@@ -55,6 +56,7 @@
       }
     })
   )
+
   footer({
     class: 'info',
     renderAfter: todoapp
@@ -130,7 +132,7 @@
       valueLabel.textContent = value = edit.value.trim()
       if (!editing && value !== oldValue) {
         todo.del(oldValue)
-        todo[oldValue = value] = completed
+        todo(oldValue = value, completed)
       }
     }
 
@@ -139,13 +141,8 @@
       todo.del(value)
     }
 
-    const applyFilter = (type = filters.active) => {
-      if (toggle.checked !== completed) toggle.checked = completed
-      Class(item, 'hidden', (type === 'Active' && completed) || (type === 'Completed' && !completed))
-    }
-
     const setState = (state = !completed) => {
-      Class(item, 'completed', completed = todo[value] = state)
+      Class(item, 'completed', todo(value, completed = state))
       applyFilter()
     }
 
@@ -163,12 +160,17 @@
 
     button({class: 'destroy', render: view, once_click: remove})
 
+    const applyFilter = (type = filters.active) => {
+      if (toggle.checked !== completed) toggle.checked = completed
+      Class(item, 'hidden', (type === 'Active' && completed) || (type === 'Completed' && !completed))
+    }
+
     applyFilter()
     todo.on.filter(applyFilter)
     todo.on.toggleAll(setState)
     todo.on.clearCompleted(() => completed && remove())
 
-    if (!todo.has(value)) todo[value] = completed
+    todo(value, completed)
     return item
   }
 }
