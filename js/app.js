@@ -16,22 +16,18 @@
 
   todo.once.init(() => {
     todo.each((state, name) => todoItem(name, state))
-    countTodos()
     todo.emit.initRoutes()
+    countTodos()
   })
   run(todo.emit.init) // defer inition
 
   const countTodos = () => {
-    const total = todo.size
     let done = 0
     todo.each(state => state && done++)
-    todo.emit.count(total - done)
-    Class(main, 'hidden', total < 1)
+    const undone = todo.size - done
+    todocount.innerHTML = `<strong>${undone}</strong> item${undone !== 1 ? 's' : ''} left`
+    Class(main, 'hidden', todo.size < 1)
   }
-
-  todo.on.count((count = 0) => {
-    todocount.innerHTML = `<strong>${count}</strong> item${count !== 1 ? 's' : ''} left`
-  })
 
   const todoapp = section({class: 'todoapp', render: 'body'})
   const todocount = span({class: 'todo-count'})
