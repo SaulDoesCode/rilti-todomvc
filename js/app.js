@@ -43,7 +43,7 @@
         placeholder: 'What needs to be done?',
         autofocus: true
       },
-      on_keydown ({keyCode}, el) {
+      onkeydown ({keyCode}, el) {
         const value = el.value.trim()
         if (keyCode === ENTER && value.length > 1) {
           todoItem(value.trim())
@@ -73,7 +73,7 @@
       class: 'toggle-all',
       id: 'toggle-all',
       attr: {type: 'checkbox'},
-      on_change (e, {checked}) { todo.emit.toggleAll(checked) }
+      onchange: (e, {checked}) => todo.emit.toggleAll(checked)
     }),
     label({attr: {for: 'toggle-all'}}, 'Mark all as complete'),
     todoList
@@ -105,7 +105,7 @@
     filters,
     button({
       class: 'clear-completed',
-      on_click: todo.emit.clearCompleted
+      onclick: todo.emit.clearCompleted
     },
       'Clear completed'
     )
@@ -116,8 +116,8 @@
     const edit = input({
       class: 'edit',
       attr: {value},
-      on_blur: e => editingMode(false),
-      on_keydown: ({keyCode}) => keyCode === ENTER && editingMode(false)
+      onblur: e => editingMode(false),
+      onkeydown: ({keyCode}) => keyCode === ENTER && editingMode(false)
     })
 
     const item = li({render: todoList, class: {completed}}, view, edit)
@@ -146,15 +146,15 @@
       class: 'toggle',
       render: view,
       attr: {type: 'checkbox'},
-      on_change: e => setState()
+      onchange: e => setState()
     })
 
     const valueLabel = label(
-      {render: view, on_dblclick: e => editingMode(true)},
+      {render: view, ondblclick: e => editingMode(true)},
       value
     )
 
-    button({class: 'destroy', render: view, once_click: remove})
+    button({class: 'destroy', render: view, onceclick: remove})
 
     const applyFilter = (type = filters.active) => {
       if (toggle.checked !== completed) toggle.checked = completed
