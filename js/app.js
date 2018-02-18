@@ -72,7 +72,7 @@
     input({
       class: 'toggle-all',
       id: 'toggle-all',
-      attr: {type: 'checkbox'},
+      type: 'checkbox',
       onchange: (e, {checked}) => todo.emit.toggleAll(checked)
     }),
     label({attr: {for: 'toggle-all'}}, 'Mark all as complete'),
@@ -115,9 +115,11 @@
     const view = div({class: 'view'})
     const edit = input({
       class: 'edit',
-      attr: {value},
-      onblur: e => editingMode(false),
-      onkeydown: ({keyCode}) => keyCode === ENTER && editingMode(false)
+      value,
+      on: {
+        blur: e => editingMode(false),
+        keydown: ({keyCode}) => keyCode === ENTER && editingMode(false)
+      }
     })
 
     const item = li({render: todoList, class: {completed}}, view, edit)
@@ -126,7 +128,8 @@
     const editingMode = editing => {
       Class(item, {editing})
       valueLabel.textContent = value = edit.value.trim()
-      if (!editing && value !== oldValue) {
+      if (editing) edit.focus()
+      else if (value !== oldValue) {
         todo.del(oldValue)
         todo(oldValue = value, completed)
       }
@@ -145,7 +148,7 @@
     const toggle = input({
       class: 'toggle',
       render: view,
-      attr: {type: 'checkbox'},
+      type: 'checkbox',
       onchange: e => setState()
     })
 
