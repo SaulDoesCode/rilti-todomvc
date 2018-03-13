@@ -1,9 +1,15 @@
-{ /* global rilti localStorage */
-  const {dom, domfn: {Class}, model, run, route} = rilti
+{ /* global rilti location localStorage */
+  const {dom, model, emitter, run} = rilti
   const {a, p, ul, li, h1, div, span, input, label, button, section, footer, header} = dom
 
   const ENTER = 13
   const link = (href, contents) => a({href}, contents)
+
+  const route = emitter((hash, fn) => {
+    route.on[hash](fn)
+    if (location.hash === hash) fn(location.hash)
+  })
+  window.onhashchange = e => route.emit(location.hash)
 
   const todo = model(localStorage.getItem('todos'))
 
@@ -25,22 +31,19 @@
     let done = 0
     todo.each(state => state && done++)
     const undone = todo.size - done
-    todocount.innerHTML = `<strong>${undone}</strong> item${undone !== 1 ? 's' : ''} left`
-    Class(main, 'hidden', todo.size < 1)
+    todocount.innerHTML = `<strong>${undone || 0}</strong> item${undone !== 1 ? 's' : ''} left`
+    main.class.hidden = todo.size < 1
   }
 
   const todoapp = section({class: 'todoapp', render: 'body'})
   const todocount = span({class: 'todo-count'})
 
-  header({
-    class: 'header',
-    render: todoapp
-  },
+  header({class: 'header', render: todoapp},
     h1('todos'),
     input({
       class: 'new-todo',
       attr: {
-        placeholder: 'What needs to be done?',
+        placeholder: 'What needs doing?',
         autofocus: true
       },
       onkeydown ({keyCode}, el) {
@@ -53,10 +56,7 @@
     })
   )
 
-  footer({
-    class: 'info',
-    renderAfter: todoapp
-  },
+  footer({class: 'info', renderAfter: todoapp},
     p('Double-click to edit a todo'),
     p('Template by ', link('http://sindresorhus.com', 'Sindre Sorhus')),
     p('Created by ', link('https://github.com/SaulDoesCode', 'SaulDoesCode')),
@@ -65,13 +65,10 @@
 
   const todoList = ul({class: 'todo-list'})
 
-  const main = section({
-    class: 'main',
-    render: todoapp
-  },
+  const main = section({class: 'main', render: todoapp},
     input({
-      class: 'toggle-all',
       id: 'toggle-all',
+      class: 'toggle-all',
       type: 'checkbox',
       onchange: (e, {checked}) => todo.emit.toggleAll(checked)
     }),
@@ -79,17 +76,14 @@
     todoList
   )
 
-  const filters = ul({
-    class: 'filters',
-    props: {active: 'All'}
-  },
+  const filters = ul({class: 'filters', props: {active: 'All'}},
     [
       ['#/', 'All'],
       ['#/active', 'Active'],
       ['#/completed', 'Completed']
     ].map(([href, name]) => {
       const filter = link(href, name)
-      todo.on.filter(type => Class(filter, 'selected', type === name))
+      todo.on.filter(type => filter.class({selected: type === name}))
       todo.on.initRoutes(() => {
         route(href, () => todo.emit.filter(filters.active = name))
       })
@@ -97,16 +91,10 @@
     })
   )
 
-  footer({
-    class: 'footer',
-    render: main
-  },
+  footer({class: 'footer', render: main},
     todocount,
     filters,
-    button({
-      class: 'clear-completed',
-      onclick: todo.emit.clearCompleted
-    },
+    button({class: 'clear-completed', onclick: todo.emit.clearCompleted},
       'Clear completed'
     )
   )
@@ -126,8 +114,8 @@
 
     let oldValue = value
     const editingMode = editing => {
-      Class(item, {editing})
-      valueLabel.textContent = value = edit.value.trim()
+      item.class({editing})
+      valueLabel.txt = value = edit.value.trim()
       if (editing) edit.focus()
       else if (value !== oldValue) {
         todo.del(oldValue)
@@ -141,7 +129,7 @@
     }
 
     const setState = (state = !completed) => {
-      Class(item, 'completed', todo(value, completed = state))
+      item.class.completed = todo(value, completed = state)
       applyFilter()
     }
 
@@ -152,8 +140,7 @@
       onchange: e => setState()
     })
 
-    const valueLabel = label(
-      {render: view, ondblclick: e => editingMode(true)},
+    const valueLabel = label({render: view, ondblclick: e => editingMode(true)},
       value
     )
 
@@ -161,7 +148,7 @@
 
     const applyFilter = (type = filters.active) => {
       if (toggle.checked !== completed) toggle.checked = completed
-      Class(item, 'hidden', (type === 'Active' && completed) || (type === 'Completed' && !completed))
+      item.class.hidden = (type === 'Active' && completed) || (type === 'Completed' && !completed)
     }
 
     applyFilter()
